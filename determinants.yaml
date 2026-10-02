@@ -9,7 +9,7 @@ video:
 tts:
   provider: elevenlabs
   elevenlabs:
-    voice_id: "PASTE-YOUR-VOICE-ID-HERE"     # same ID you put in project.yaml
+    voice_id: "hpp4J3VqNfWAUOO0d1Us"     # same ID you put in project.yaml
     model_id: eleven_multilingual_v2
     voice_settings: {stability: 0.45, similarity_boost: 0.8, style: 0.3}
   gemini:
