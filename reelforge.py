@@ -80,6 +80,13 @@ def ffprobe_duration(path: Path) -> float:
     return float(p.stdout.strip())
 
 
+def ffprobe_size(path: Path) -> tuple[int, int]:
+    p = run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+             "stream=width,height", "-of", "csv=p=0", path])
+    w, h = p.stdout.strip().split(",")[:2]
+    return int(w), int(h)
+
+
 def ffmpeg_stderr(args: list) -> str:
     """Run an analysis filter and return ffmpeg's log (analysis output lives in stderr)."""
     p = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", *map(str, args)],
@@ -600,6 +607,12 @@ def cmd_build(path: Path, dry: bool = False):
             raise SystemExit("Set video.path or video.render: true")
         beats = manim_sections(video, v["scene"])
     D = ffprobe_duration(video)
+    vw, vh = ffprobe_size(video)
+    log(f"Source video: {vw}x{vh}")
+    if abs(vw / vh - reel["width"] / reel["height"]) > 0.01:
+        log(f"WARNING: source is not {reel['width']}x{reel['height']} shaped; it will be fitted "
+            f"with fit={reel['fit']}. For Manim, set config.frame_width/height in your scene "
+            f"(see determinants_scene.py).")
 
     all_named = all(b.section for b in blocks)
     if beats and len(beats) > 1 and all_named:

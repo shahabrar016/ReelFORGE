@@ -1,0 +1,42 @@
+# Build with: Actions -> Build reel -> Run workflow -> project file: determinants.yaml
+
+video:
+  manim_file: determinants_scene.py
+  scene: DeterminantRules
+  quality: h
+  vertical: true
+
+tts:
+  provider: elevenlabs
+  elevenlabs:
+    voice_id: "PASTE-YOUR-VOICE-ID-HERE"     # same ID you put in project.yaml
+    model_id: eleven_multilingual_v2
+    voice_settings: {stability: 0.45, similarity_boost: 0.8, style: 0.3}
+  gemini:
+    model: gemini-2.5-flash-preview-tts
+    voice: Kore
+    style: "Say in an energetic, clear teacher voice:"
+
+narration:
+  - section: hook
+    text: "Four determinant rules that make exam questions instant. Our matrix: three times four, minus one times two. Determinant is ten."
+  - section: swap
+    text: "Rule one: swap two rows, and the sign flips. Ten becomes minus ten."
+  - section: scale
+    text: "Rule two: multiply a row by k, and the determinant is multiplied by k. Double a row, double the answer."
+  - section: zero
+    text: "Rule three: if two rows are equal, the determinant is always zero."
+  - section: transpose
+    text: "Rule four: transpose the matrix. Rows become columns, and the determinant doesn't change."
+  - section: outro
+    text: "Swap, scale, equal rows, transpose. Save this for your next exam, and follow for more!"
+
+reel:
+  width: 1080
+  height: 1920
+  fps: 30
+  captions: true
+  caption_words: 3
+  caption_margin_v: 380
+
+output: out/determinants_reel.mp4
