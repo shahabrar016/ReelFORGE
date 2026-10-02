@@ -10,7 +10,7 @@ video:
 tts:
   provider: elevenlabs          # elevenlabs | gemini   (can be overridden per block)
   elevenlabs:
-    voice_id: "21m00Tcm4TlvDq8ikWcM"
+    voice_id: "hpp4J3VqNfWAUOO0d1Us"
     model_id: eleven_multilingual_v2
     voice_settings: {stability: 0.45, similarity_boost: 0.8, style: 0.3}
   gemini:
