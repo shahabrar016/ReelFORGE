@@ -1,0 +1,59 @@
+name: Build reel
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Project file to build"
+        default: "project.yaml"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      PROJECT: ${{ inputs.project }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install ffmpeg, Manim system libraries and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libcairo2-dev libpango1.0-dev fonts-liberation
+
+      - name: Install Python packages
+        run: pip install -r requirements.txt
+
+      # Reuses voice clips from earlier runs so unchanged lines don't cost credits again
+      - name: Restore voice cache
+        uses: actions/cache@v4
+        with:
+          path: reel_work/tts_cache
+          key: tts-${{ github.run_id }}
+          restore-keys: tts-
+
+      - name: Generate voice
+        run: python reelforge.py voice "$PROJECT"
+
+      - name: Render and build reel
+        run: python reelforge.py build "$PROJECT"
+
+      - name: Upload the reel
+        uses: actions/upload-artifact@v4
+        with:
+          name: reel
+          path: |
+            out/*.mp4
+            reel_work/timeline.json
+          retention-days: 14
