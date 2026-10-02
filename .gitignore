@@ -1,0 +1,16 @@
+# ReelForge working files and renders
+reel_work/
+out/
+media/
+*.mp4
+*.mp3
+*.wav
+!assets/**/*.mp3
+!assets/**/*.wav
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env

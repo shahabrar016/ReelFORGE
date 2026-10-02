@@ -1,0 +1,4 @@
+pyyaml
+requests            # ElevenLabs
+google-genai        # Gemini TTS
+manim               # only needed if ReelForge renders your scene

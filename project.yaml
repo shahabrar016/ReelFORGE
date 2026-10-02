@@ -1,0 +1,53 @@
+# ReelForge project — edit, then:  python reelforge.py build project.yaml
+
+video:
+  manim_file: example_scene.py
+  scene: PythagorasReel
+  quality: h          # l | m | h | k
+  vertical: true      # render natively at reel.width x reel.height
+  # path: my_render.mp4   # use an existing video instead of rendering (any aspect ratio)
+
+tts:
+  provider: elevenlabs          # elevenlabs | gemini   (can be overridden per block)
+  elevenlabs:
+    voice_id: "21m00Tcm4TlvDq8ikWcM"
+    model_id: eleven_multilingual_v2
+    voice_settings: {stability: 0.45, similarity_boost: 0.8, style: 0.3}
+  gemini:
+    model: gemini-2.5-flash-preview-tts
+    voice: Kore
+    style: "Say in an energetic, curious science-YouTuber voice:"
+
+# One block = one piece of narration. `section` pins it to a Manim section
+# (leave sections out entirely and ReelForge places blocks automatically).
+narration:
+  - section: hook
+    text: "Everyone memorises a squared plus b squared equals c squared. But why is it true?"
+  - section: triangle
+    text: "Take any right triangle. Call the short sides a and b, and the long side c."
+  - section: squares
+    text: "Now build a square on every side. Here the areas are nine, sixteen and twenty-five."
+  - section: proof
+    text: "Nine plus sixteen... is exactly twenty-five. The two small squares always fill the big one."
+  - section: outro
+    text: "That's Pythagoras in under a minute. Follow for more."
+    # provider: gemini          # mix voices per block if you like
+    # audio: my_take.wav        # or use your own recording for a block
+
+# audio_file: full_voiceover.mp3   # alternative: one long recording, auto-split at pauses
+
+music:
+  # path: music.mp3
+  volume: 0.18
+  duck: true            # lower music automatically while the voice speaks
+
+reel:
+  width: 1080
+  height: 1920
+  fps: 30
+  fit: blur             # for non-vertical videos: blur | pad | crop
+  captions: true
+  caption_font: Arial
+  caption_words: 3
+
+output: out/pythagoras_reel.mp4
