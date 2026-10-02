@@ -548,9 +548,23 @@ def compose(video: Path, vsegs, blocks: list[Block], total: float, cfg: dict,
 
 
 # --------------------------------------------------------------------------- orchestration
+def load_dotenv(*folders: Path) -> None:
+    """Load KEY=VALUE lines from a .env file (real environment variables win)."""
+    for folder in folders:
+        env = folder / ".env"
+        if not env.exists():
+            continue
+        for line in env.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
 def load_project(path: Path):
     cfg = yaml.safe_load(path.read_text(encoding="utf-8"))
     base = path.parent.resolve()
+    load_dotenv(base, Path(__file__).resolve().parent)
     work = base / cfg.get("work_dir", "reel_work")
     work.mkdir(parents=True, exist_ok=True)
     reel = {**DEFAULT_REEL, **(cfg.get("reel") or {})}
