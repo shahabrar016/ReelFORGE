@@ -1,0 +1,62 @@
+# GitHub Actions: Build reel -> Run workflow -> project: rutherford.yaml
+# Before running, copy the tts block from your working determinants.yaml
+# (or project.yaml), replacing the tts block below. This preserves your
+# provider, model and voice. For ElevenLabs, at minimum replace voice_id.
+# API keys stay in your existing GitHub repository secrets.
+
+video:
+  manim_file: rutherford_scene.py
+  scene: RutherfordAtom
+  quality: h
+  vertical: true
+tts:
+  provider: elevenlabs
+  elevenlabs:
+    voice_id: PASTE_YOUR_EXISTING_VOICE_ID_HERE
+    model_id: eleven_multilingual_v2
+narration:
+- section: hook
+  text: 'An atom is mostly empty space. Rutherford''s nuclear model explained a surprising
+    result: a few alpha particles turned back.'
+- section: experiment
+  text: Geiger and Marsden fired positively charged alpha particles at thin gold foil.
+    A fluorescent screen detected where the particles went.
+- section: observations
+  text: Most passed almost straight through. Some were deflected. A very small fraction
+    scattered backward, through angles greater than ninety degrees.
+- section: empty_space
+  text: Most particles passed through because an atom's mass and positive charge are
+    concentrated in a tiny region, leaving mostly empty space.
+- section: repulsion
+  text: An alpha particle and the nucleus are both positive. Electrical repulsion
+    bends its path. A closer approach can produce a larger deflection.
+- section: nucleus
+  text: Rutherford proposed a tiny, dense, positive nucleus containing almost all
+    the atom's mass, with negative electrons outside it.
+- section: scale
+  text: In modern measurements, atomic radii are roughly ten thousand to a hundred
+    thousand times nuclear radii. Our nucleus is greatly enlarged.
+- section: limits
+  text: This historical model did not explain atomic stability or discrete spectral
+    lines. Modern quantum theory describes electrons with orbitals, not fixed planetary
+    paths.
+- section: recap
+  text: 'Remember: mostly empty space, a tiny positive nucleus, and electrons outside.
+    Rare backward scattering was the crucial clue to the nucleus.'
+reel:
+  width: 1080
+  height: 1920
+  fps: 30
+  fit: pad
+  lead: 0.25
+  gap: 0.25
+  tail: 0.35
+  end_hold: 0.8
+  captions: true
+  caption_words: 3
+  caption_font: Arial
+  caption_size: 84
+  caption_margin_v: 420
+  max_seconds: 180
+work_dir: reel_work
+output: out/rutherford.mp4
