@@ -12,7 +12,7 @@ video:
 tts:
   provider: elevenlabs
   elevenlabs:
-    voice_id: PASTE_YOUR_EXISTING_VOICE_ID_HERE
+    voice_id: hpp4J3VqNfWAUOO0d1Us
     model_id: eleven_multilingual_v2
 narration:
 - section: hook
