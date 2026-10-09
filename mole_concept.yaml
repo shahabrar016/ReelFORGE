@@ -1,0 +1,69 @@
+# Mole concept fundamentals - ReelForge project
+# Build:  python reelforge.py voice mole_concept.yaml
+#         python reelforge.py build mole_concept.yaml
+# (or GitHub Actions -> Build reel -> project file: mole_concept.yaml)
+
+video:
+  manim_file: mole_scene.py
+  scene: MoleConcept
+  quality: h
+  vertical: true
+
+# Copy the whole `tts:` block from your working determinants.yaml here
+# (or just paste your voice ID below).
+tts:
+  provider: elevenlabs
+  elevenlabs:
+    voice_id: PASTE_YOUR_ELEVENLABS_VOICE_ID
+    model_id: eleven_multilingual_v2
+    context: true
+
+# Section names must match self.section("...") in mole_scene.py
+narration:
+  - section: hook
+    text: "A dozen means twelve. A mole is also just a counting number, but a gigantic one: 6.022 times 10 to the power 23."
+
+  - section: avogadro
+    text: "One mole of atoms, molecules or ions contains that many particles. This is the Avogadro constant."
+
+  - section: molar_mass
+    text: "Molar mass is the mass of one mole, in grams. It equals the molecular mass in u. Water is 18 grams per mole, carbon dioxide is 44."
+
+  - section: formula_mass
+    text: "Moles connect everything. Number of moles equals mass divided by molar mass."
+
+  - section: formula_particles
+    text: "Or number of particles divided by Avogadro's number."
+
+  - section: formula_volume
+    text: "Or, for a gas, volume divided by 22.4 litres, at 273 kelvin and 1 atmosphere."
+
+  - section: water_moles
+    text: "Take 36 grams of water. Moles equal 36 over 18, which is 2. So the molecules number 2 times Avogadro's number: 1.204 times 10 to the power 24."
+
+  - section: water_atoms
+    text: "But each water molecule has 3 atoms. So the atoms triple, to about 3.6 times 10 to the power 24."
+
+  - section: gas_volume
+    text: "For gases, 22.4 litres is one mole. So 11.2 litres is half a mole."
+
+  - section: gas_mass
+    text: "For oxygen, at 32 grams per mole, that half mole weighs 16 grams."
+
+  - section: equation
+    text: "In a balanced equation, coefficients are mole ratios. Two moles of hydrogen react with one mole of oxygen, to give two moles of water."
+
+  - section: masses
+    text: "In grams, that is 4, 32 and 36. Mole ratios are not mass ratios."
+
+reel:
+  width: 1080
+  height: 1920
+  fps: 30
+  fit: blur
+  captions: true
+  caption_words: 3
+  end_hold: 0.8
+
+work_dir: reel_work
+output: out/mole_concept.mp4
