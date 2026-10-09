@@ -1,0 +1,60 @@
+# Principle of Atom Conservation (POAC) - ReelForge project
+# Build:  python reelforge.py voice poac.yaml
+#         python reelforge.py build poac.yaml
+# (or GitHub Actions -> Build reel -> project file: poac.yaml)
+
+video:
+  manim_file: poac_scene.py
+  scene: POAC
+  quality: h
+  vertical: true
+
+# Copy the whole `tts:` block from your working determinants.yaml here
+# (or just paste your voice ID below).
+tts:
+  provider: elevenlabs
+  elevenlabs:
+    voice_id: PASTE_YOUR_ELEVENLABS_VOICE_ID
+    model_id: eleven_multilingual_v2
+    context: true
+
+# Section names must match self.section("...") in poac_scene.py
+narration:
+  - section: idea
+    text: "The principle of atom conservation, P O A C. In any reaction, atoms are never created or destroyed. So for every element, atoms before equal atoms after."
+
+  - section: mole_atoms
+    text: "We count these atoms in moles. One mole of aluminium sulfate holds 2 moles of aluminium atoms, 3 of sulfur, and 12 of oxygen."
+
+  - section: mole_rule
+    text: "Moles of atoms equal moles of the compound, times the number of atoms per formula."
+
+  - section: method
+    text: "To use it, pick an element. Its moles of atoms before the reaction equal its moles after, counting every species. No balanced equation is needed."
+
+  - section: ex_setup
+    text: "Example. 122.5 grams of potassium chlorate decomposes completely into potassium chloride and oxygen. Find the oxygen formed."
+
+  - section: ex_mole
+    text: "Its molar mass is 122.5 grams per mole, so this is exactly 1 mole."
+
+  - section: ex_poac
+    text: "Apply P O A C on oxygen. Before: 3 oxygen atoms per formula unit, times 1 mole. After: each oxygen molecule has 2 atoms. So moles of oxygen equal 3 over 2, which is 1.5."
+
+  - section: ex_answer
+    text: "That is 48 grams of oxygen, or 33.6 litres at 273 kelvin and 1 atmosphere."
+
+  - section: cta
+    text: "Follow IITians PACE for more videos like this."
+
+reel:
+  width: 1080
+  height: 1920
+  fps: 30
+  fit: blur
+  captions: true
+  caption_words: 3
+  end_hold: 0.8
+
+work_dir: reel_work
+output: out/poac.mp4
