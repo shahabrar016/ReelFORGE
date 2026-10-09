@@ -14,7 +14,7 @@ video:
 tts:
   provider: elevenlabs
   elevenlabs:
-    voice_id: PASTE_YOUR_ELEVENLABS_VOICE_ID
+    voice_id: hpp4J3VqNfWAUOO0d1Us
     model_id: eleven_multilingual_v2
     context: true
 
