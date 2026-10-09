@@ -1,4 +1,5 @@
 pyyaml
-requests            # ElevenLabs
-google-genai        # Gemini TTS
-manim               # only needed if ReelForge renders your scene
+requests
+google-genai
+manim==0.21.0
+av==16.0.1

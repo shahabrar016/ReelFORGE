@@ -15,19 +15,7 @@ config.frame_height = 16
 config.frame_width = 9
 config.background_color = "#0E1020"
 
-_T = Path(__file__).with_name("reel_work") / "timings.json"
-TIMINGS = json.loads(_T.read_text()) if _T.exists() else {}
-
-
-class SyncedScene(Scene):
-    def section(self, name):
-        self.next_section(name)
-        self._sec_name, self._sec_t0 = name, self.renderer.time
-
-    def fill(self, fallback=0.8):
-        need = TIMINGS.get(self._sec_name)
-        spent = self.renderer.time - self._sec_t0
-        self.wait(max(0.1, need - spent) if need else fallback)
+from synced_scene import SyncedScene
 
 
 class PythagorasReel(SyncedScene):

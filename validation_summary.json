@@ -1,0 +1,73 @@
+{
+  "tests_passed": 10,
+  "render": {
+    "programs": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "width": 1080,
+        "height": 1920,
+        "r_frame_rate": "30/1",
+        "duration": "84.600000"
+      },
+      {
+        "codec_name": "aac",
+        "r_frame_rate": "0/0",
+        "duration": "84.588000"
+      }
+    ],
+    "format": {
+      "duration": "84.600000",
+      "size": "6663928"
+    }
+  },
+  "scheduled_voice_gaps": {
+    "inter_block_gaps": [
+      {
+        "after": "hook",
+        "before": "experiment",
+        "seconds": 0.172
+      },
+      {
+        "after": "experiment",
+        "before": "observations",
+        "seconds": 0.1694
+      },
+      {
+        "after": "observations",
+        "before": "empty_space",
+        "seconds": 0.16
+      },
+      {
+        "after": "empty_space",
+        "before": "repulsion",
+        "seconds": 0.171
+      },
+      {
+        "after": "repulsion",
+        "before": "nucleus",
+        "seconds": 0.16
+      },
+      {
+        "after": "nucleus",
+        "before": "scale",
+        "seconds": 0.1904
+      },
+      {
+        "after": "scale",
+        "before": "limits",
+        "seconds": 0.1714
+      },
+      {
+        "after": "limits",
+        "before": "recap",
+        "seconds": 0.19
+      }
+    ],
+    "inserted_freeze_seconds": 0.0,
+    "note": "Gaps exclude silence already inside the source voice clips; estimated word cues are approximate."
+  },
+  "tts_api_tested": false,
+  "demo_audio": "Recovered from the user-provided MP4; word timings estimated.",
+  "physics_update_check": "Three particle updaters match equal-time RK4 samples; demonstration uses prior schematic playback timing."
+}

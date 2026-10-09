@@ -26,6 +26,7 @@ import argparse
 import base64
 import hashlib
 import json
+import math
 import os
 import re
 import subprocess
@@ -66,8 +67,10 @@ def log(msg: str) -> None:
     print(f"[reelforge] {msg}", flush=True)
 
 
-def run(cmd: list, cwd: Path | None = None) -> subprocess.CompletedProcess:
-    p = subprocess.run([str(c) for c in cmd], cwd=cwd, capture_output=True, text=True)
+def run(cmd: list, cwd: Path | None = None, env=None, log_path: Path | None = None) -> subprocess.CompletedProcess:
+    p = subprocess.run([str(c) for c in cmd], cwd=cwd, capture_output=True, text=True, env=env)
+    if log_path is not None:
+        log_path.write_text(p.stdout + "\n" + p.stderr, encoding="utf-8")
     if p.returncode != 0:
         sys.stderr.write(p.stderr[-4000:] + "\n")
         raise RuntimeError(f"Command failed: {' '.join(map(str, cmd[:6]))} ...")
@@ -78,13 +81,6 @@ def ffprobe_duration(path: Path) -> float:
     p = run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
              "-of", "default=nw=1:nk=1", path])
     return float(p.stdout.strip())
-
-
-def ffprobe_size(path: Path) -> tuple[int, int]:
-    p = run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
-             "stream=width,height", "-of", "csv=p=0", path])
-    w, h = p.stdout.strip().split(",")[:2]
-    return int(w), int(h)
 
 
 def ffmpeg_stderr(args: list) -> str:
@@ -197,13 +193,19 @@ def tts_gemini(text: str, cfg: dict, out_base: Path, *_):
 PROVIDERS = {"elevenlabs": tts_elevenlabs, "gemini": tts_gemini}
 
 
-def synthesize(text, provider, pcfg, cache_dir: Path, prev_text="", next_text=""):
-    key = hashlib.sha1(json.dumps([provider, pcfg, text, prev_text, next_text],
+def synthesize(text, provider, pcfg, cache_dir: Path, prev_text="", next_text="", cache_tag=""):
+    cache_identity = [provider, pcfg, text, prev_text, next_text]
+    if cache_tag:
+        cache_identity.append(str(cache_tag))
+    key = hashlib.sha1(json.dumps(cache_identity,
                                   sort_keys=True).encode()).hexdigest()[:16]
     meta = cache_dir / f"{key}.json"
     if meta.exists():                       # re-runs never spend credits twice
         m = json.loads(meta.read_text())
-        return Path(m["path"]), [Word(**w) for w in m["words"]]
+        cached = cache_dir / Path(m["path"]).name
+        if cached.exists():
+            return cached, [Word(**w) for w in m["words"]]
+        log("Cached audio missing; regenerating this block")
     log(f"TTS ({provider}): {text[:60]}{'...' if len(text) > 60 else ''}")
     path, words = PROVIDERS[provider](text, pcfg, cache_dir / key, prev_text, next_text)
     meta.write_text(json.dumps({"path": str(path), "words": [w.__dict__ for w in words]}))
@@ -218,16 +220,24 @@ def silences(path: Path, noise="-45dB", d=0.15):
     return starts, ends
 
 
-def trim_and_normalize(src: Path, dst: Path):
+def trim_and_normalize(src: Path, dst: Path, options=None, words=None):
     """Cut leading/trailing silence so placement is exact. Returns (head_offset, duration)."""
     D = ffprobe_duration(src)
-    starts, ends = silences(src)
+    options = options or {}
+    starts, ends = silences(src, noise=options.get("trim_noise", "-48dB"))
     head, tail = 0.0, D
     if starts and starts[0] <= 0.02 and ends:
         head = ends[0]
     if starts and (len(ends) < len(starts) or ends[-1] >= D - 0.05) and starts[-1] > head:
         tail = starts[-1]
-    head, tail = max(0.0, head - 0.04), min(D, tail + 0.12)
+    head = max(0.0, head - options.get("head_padding", 0.04))
+    tail = min(D, tail + options.get("tail_padding", 0.06))
+    # Timestamp guards keep quiet initial/final consonants inside the clip.
+    if words:
+        head = min(head, max(0.0, min(w.start for w in words) - 0.04))
+        tail = max(tail, min(D, max(w.end for w in words) + 0.04))
+    if tail <= head:
+        raise ValueError(f"No usable audio in {src}")
     run(["ffmpeg", "-y", "-v", "error", "-i", src, "-ss", f"{head:.3f}", "-to", f"{tail:.3f}",
          "-ar", "48000", "-ac", "2", dst])
     return head, ffprobe_duration(dst)
@@ -288,15 +298,15 @@ def prepare_blocks(cfg: dict, base: Path, work: Path) -> list[Block]:
                 pcfg = {**tts.get(prov, {}), **it.get("voice", {})}
                 prev_t = texts[i - 1] if i > 0 else ""
                 next_t = texts[i + 1] if i + 1 < len(texts) else ""
-                path, words = synthesize(it["text"], prov, pcfg, cache, prev_t, next_t)
+                path, words = synthesize(it["text"], prov, pcfg, cache, prev_t, next_t, cfg.get("tts_cache_tag", ""))
                 sources.append((path, words, it))
 
     blocks = []
     for i, (src, words, it) in enumerate(sources):
         dst = bdir / f"block_{i:02d}.wav"
-        head, dur = trim_and_normalize(src, dst)
+        head, dur = trim_and_normalize(src, dst, cfg.get("audio", {}), words)
         words = [Word(w.text, max(0.0, w.start - head), min(dur, w.end - head))
-                 for w in words if w.end - head > 0]
+                 for w in words if w.end > head and w.start < head + dur]
         text = it.get("text", "")
         if not words and text:
             words = estimate_words(text, dur)
@@ -308,12 +318,15 @@ def prepare_blocks(cfg: dict, base: Path, work: Path) -> list[Block]:
 # --------------------------------------------------------------------------- video
 def render_manim(v: dict, reel: dict, base: Path, work: Path) -> Path:
     media = work / "media"
-    cmd = ["manim", f"-q{v.get('quality', 'h')}", "--save_sections", "--media_dir", media,
+    cmd = [sys.executable, "-m", "manim", f"-q{v.get('quality', 'h')}", "--save_sections", "--disable_caching", "--media_dir", media,
            "--fps", reel["fps"], base / v["manim_file"], v["scene"]]
     if v.get("vertical", True):
-        cmd[2:2] = ["-r", f"{reel['width']},{reel['height']}"]
+        cmd[3:3] = ["-r", f"{reel['width']},{reel['height']}"]
     log("Rendering Manim scene: " + " ".join(map(str, cmd)))
-    run(cmd, cwd=base)
+    env = os.environ.copy()
+    env["REELFORGE_TIMINGS"] = str((work / "timings.json").resolve())
+    env["REELFORGE_CUES"] = str((work / "cues.json").resolve())
+    run(cmd, cwd=base, env=env, log_path=work / "manim.log")
     found = [p for p in media.glob(f"videos/**/{v['scene']}.mp4")
              if "partial_movie_files" not in p.parts and "sections" not in p.parts]
     if not found:
@@ -327,9 +340,11 @@ def manim_sections(video: Path, scene: str) -> list[Beat]:
         return []
     beats, t = [], 0.0
     for i, s in enumerate(json.loads(j.read_text())):
+        if not s.get("video"):
+            continue  # Manim can emit an empty initial section.
         f = j.parent / s["video"]
         if not f.exists():
-            continue
+            raise FileNotFoundError(f"Missing section video: {f}")
         d = ffprobe_duration(f)
         beats.append(Beat(s.get("name") or f"section_{i}", t, t + d))
         t += d
@@ -351,11 +366,15 @@ def detect_beats(video: Path, D: float, a: dict) -> list[Beat]:
 
 # --------------------------------------------------------------------------- planning
 def need_for(durs: list[float], reel: dict) -> float:
+    if not durs:
+        return 0.0
     return reel["lead"] + sum(durs) + reel["gap"] * (len(durs) - 1) + reel["tail"]
 
 
 def plan_direct(blocks: list[Block], beats: list[Beat]):
     names = {b.name: i for i, b in enumerate(beats)}
+    if len(names) != len(beats):
+        raise ValueError("Manim section names must be unique for direct placement")
     missing = sorted({b.section for b in blocks if b.section not in names})
     if missing:
         raise SystemExit(f"Narration refers to unknown sections {missing}. Available: {list(names)}")
@@ -393,6 +412,8 @@ def plan_auto(blocks: list[Block], beats: list[Beat], reel: dict):
 
 
 def build_timeline(plan, blocks: list[Block], beats: list[Beat], reel: dict):
+    if not plan:
+        raise ValueError("No video beats available")
     vsegs, out_t = [], 0.0
     for j0, j1, idxs in plan:
         s, e = beats[j0].start, beats[j1 - 1].end
@@ -457,11 +478,14 @@ def write_captions(blocks: list[Block], reel: dict, path: Path):
                 elif ci + 1 < len(chunks):
                     en = b.start + chunks[ci + 1][0].start
                 else:
-                    en = b.start + w.end + 0.15
+                    en = min(b.start + b.duration, b.start + w.end + 0.10)
                 txt = " ".join(f"{{\\c{hl}&}}{esc(x.text)}{{\\c&H00FFFFFF&}}" if x is w else esc(x.text)
                                for x in ch)
                 lines.append(f"Dialogue: 0,{ass_time(st)},{ass_time(en)},Reel,,0,0,0,,{txt}")
     W, H = reel["width"], reel["height"]
+    margin_h = round(80*W/1080)
+    outline = max(1, round(6*W/1080))
+    shadow = max(0, round(2*W/1080))
     path.write_text(f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {W}
@@ -470,7 +494,7 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Reel,{reel['caption_font']},{reel['caption_size']},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,6,2,2,80,80,{reel['caption_margin_v']},1
+Style: Reel,{reel['caption_font']},{reel['caption_size']},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,{outline},{shadow},2,{margin_h},{margin_h},{reel['caption_margin_v']},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -517,6 +541,8 @@ def compose(video: Path, vsegs, blocks: list[Block], total: float, cfg: dict,
     for i, b in enumerate(blocks):
         ms = int(round(b.start * 1000))
         fc.append(f"[{i + 1}:a]aformat=sample_rates=48000:channel_layouts=stereo,"
+                  f"asetpts=PTS-STARTPTS,"
+                  f"afade=t=in:d=0.005,afade=t=out:st={max(0, b.duration-0.005):.6f}:d=0.005,"
                   f"adelay=delays={ms}:all=1[a{i}]")
     if len(blocks) > 1:
         fc.append("".join(f"[a{i}]" for i in range(len(blocks)))
@@ -555,23 +581,24 @@ def compose(video: Path, vsegs, blocks: list[Block], total: float, cfg: dict,
 
 
 # --------------------------------------------------------------------------- orchestration
-def load_dotenv(*folders: Path) -> None:
-    """Load KEY=VALUE lines from a .env file (real environment variables win)."""
-    for folder in folders:
-        env = folder / ".env"
-        if not env.exists():
-            continue
-        for line in env.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
-
-
 def load_project(path: Path):
     cfg = yaml.safe_load(path.read_text(encoding="utf-8"))
     base = path.parent.resolve()
-    load_dotenv(base, Path(__file__).resolve().parent)
+    # Reuse the user's live voice settings, with no copied credentials or guessed ID.
+    if cfg.get("tts_from"):
+        candidates = cfg["tts_from"]
+        if isinstance(candidates, str):
+            candidates = [candidates]
+        for candidate in candidates:
+            source = base / candidate
+            if source.exists():
+                inherited = yaml.safe_load(source.read_text(encoding="utf-8")) or {}
+                if inherited.get("tts"):
+                    cfg["tts"] = inherited["tts"]
+                    log(f"Using TTS settings from {source.name}")
+                    break
+        else:
+            raise ValueError("tts_from: no project with a tts block was found")
     work = base / cfg.get("work_dir", "reel_work")
     work.mkdir(parents=True, exist_ok=True)
     reel = {**DEFAULT_REEL, **(cfg.get("reel") or {})}
@@ -579,14 +606,31 @@ def load_project(path: Path):
     return cfg, base, work, reel, analysis
 
 
+def write_timing_files(blocks, reel, work):
+    """Keep numeric timings backward compatible; expose section-local word cues."""
+    timings, cues = {}, {}
+    for sec in dict.fromkeys(b.section for b in blocks if b.section):
+        group = [b for b in blocks if b.section == sec]
+        raw = need_for([b.duration for b in group], reel)
+        # Frame rounding prevents repeated sub-frame freeze insertion at joins.
+        duration = math.ceil((raw - 1e-9) * reel["fps"]) / reel["fps"]
+        timings[sec] = duration
+        cursor, words = reel["lead"], []
+        for block in group:
+            words.extend({"text": w.text, "start": cursor+w.start, "end": cursor+w.end}
+                         for w in block.words)
+            cursor += block.duration + reel["gap"]
+        cues[sec] = {"duration": duration, "words": words}
+    (work / "timings.json").write_text(json.dumps(timings, indent=2))
+    (work / "cues.json").write_text(json.dumps(cues, indent=2))
+    return timings
+
+
 def cmd_voice(path: Path):
     cfg, base, work, reel, _ = load_project(path)
     blocks = prepare_blocks(cfg, base, work)
-    timings: dict[str, float] = {}
-    for sec in dict.fromkeys(b.section for b in blocks if b.section):
-        timings[sec] = round(need_for([b.duration for b in blocks if b.section == sec], reel), 3)
-    (work / "timings.json").write_text(json.dumps(timings, indent=2))
-    log(f"Wrote {work / 'timings.json'} -> render Manim now and sections will match the voice exactly")
+    timings = write_timing_files(blocks, reel, work)
+    log("Wrote current section durations and word cues")
     for k, v in timings.items():
         print(f"  {k:<20} {v:6.2f}s")
 
@@ -597,6 +641,8 @@ def cmd_build(path: Path, dry: bool = False):
     if not blocks:
         raise SystemExit("No narration blocks. Add `narration:` items or an `audio_file:`.")
 
+    # Always refresh before rendering, even when the separate voice step was skipped.
+    write_timing_files(blocks, reel, work)
     v = cfg.get("video", {})
     if v.get("path"):
         video = (base / v["path"]).resolve()
@@ -607,15 +653,11 @@ def cmd_build(path: Path, dry: bool = False):
             raise SystemExit("Set video.path or video.render: true")
         beats = manim_sections(video, v["scene"])
     D = ffprobe_duration(video)
-    vw, vh = ffprobe_size(video)
-    log(f"Source video: {vw}x{vh}")
-    if abs(vw / vh - reel["width"] / reel["height"]) > 0.01:
-        log(f"WARNING: source is not {reel['width']}x{reel['height']} shaped; it will be fitted "
-            f"with fit={reel['fit']}. For Manim, set config.frame_width/height in your scene "
-            f"(see determinants_scene.py).")
 
     all_named = all(b.section for b in blocks)
-    if beats and len(beats) > 1 and all_named:
+    if all_named and not beats and not v.get("path"):
+        raise ValueError("Named narration requires saved Manim sections; refusing approximate placement")
+    if beats and all_named:
         mode, plan = "direct (Manim sections)", plan_direct(blocks, beats)
     else:
         if not beats or len(beats) <= 1:
@@ -634,8 +676,19 @@ def cmd_build(path: Path, dry: bool = False):
         "video": str(video), "output_seconds": total,
         "video_segments": [{"src_start": s, "src_end": e, "hold": h} for s, e, h in vsegs],
         "blocks": [{"index": b.idx, "start": round(b.start, 3), "duration": round(b.duration, 3),
-                    "text": b.text, "file": str(b.path)} for b in blocks],
+                    "text": b.text, "section": b.section, "file": str(b.path)} for b in blocks],
     }, indent=2))
+    gaps = [{"after": a.section, "before": b.section,
+             "seconds": round(b.start - a.start - a.duration, 4)}
+            for a, b in zip(blocks, blocks[1:])]
+    (work / "quality_report.json").write_text(json.dumps({
+        "inter_block_gaps": gaps,
+        "inserted_freeze_seconds": round(sum(x[2] for x in vsegs) - reel["end_hold"], 4),
+        "note": "Gaps exclude silence already inside the source voice clips; estimated word cues are approximate."
+    }, indent=2))
+    for gap in gaps:
+        if gap["seconds"] > 0.45:
+            log(f"WARNING: {gap['seconds']:.2f}s scheduled pause after {gap['after']}")
     if total > reel["max_seconds"]:
         log(f"WARNING: reel is {total:.0f}s, longer than max_seconds={reel['max_seconds']}")
     if dry:

@@ -1,19 +1,13 @@
-# GitHub Actions: Build reel -> Run workflow -> project: rutherford.yaml
-# Before running, copy the tts block from your working determinants.yaml
-# (or project.yaml), replacing the tts block below. This preserves your
-# provider, model and voice. For ElevenLabs, at minimum replace voice_id.
-# API keys stay in your existing GitHub repository secrets.
-
+# Optional: set tts_cache_tag: fresh-voice-1 to request fresh TTS once.
+# Uses the first existing project below with a tts block; no voice ID to paste.
+tts_from:
+- determinants.yaml
+- project.yaml
 video:
   manim_file: rutherford_scene.py
   scene: RutherfordAtom
   quality: h
   vertical: true
-tts:
-  provider: elevenlabs
-  elevenlabs:
-    voice_id: hpp4J3VqNfWAUOO0d1Us
-    model_id: eleven_multilingual_v2
 narration:
 - section: hook
   text: 'An atom is mostly empty space. Rutherford''s nuclear model explained a surprising
@@ -43,20 +37,24 @@ narration:
 - section: recap
   text: 'Remember: mostly empty space, a tiny positive nucleus, and electrons outside.
     Rare backward scattering was the crucial clue to the nucleus.'
+audio:
+  trim_noise: -48dB
+  head_padding: 0.04
+  tail_padding: 0.06
 reel:
   width: 1080
   height: 1920
   fps: 30
   fit: pad
-  lead: 0.25
-  gap: 0.25
-  tail: 0.35
-  end_hold: 0.8
+  lead: 0.06
+  gap: 0.12
+  tail: 0.1
+  end_hold: 0.3
+  caption_font: DejaVu Sans
+  caption_size: 66
+  caption_words: 4
+  caption_margin_v: 350
   captions: true
-  caption_words: 3
-  caption_font: Arial
-  caption_size: 84
-  caption_margin_v: 420
-  max_seconds: 180
+  crf: 18
 work_dir: reel_work
 output: out/rutherford.mp4
