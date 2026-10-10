@@ -1,0 +1,53 @@
+# Modern periodic table, part 2: trends - ReelForge project
+# Build:  python reelforge.py voice periodic_table_2_trends.yaml
+#         python reelforge.py build periodic_table_2_trends.yaml
+
+video:
+  manim_file: periodic_table_scene.py
+  scene: PeriodicTableTrends
+  quality: h
+  vertical: true
+
+# Copy the whole `tts:` block from your working determinants.yaml here
+# (or just paste your voice ID below).
+tts:
+  provider: elevenlabs
+  elevenlabs:
+    voice_id: PASTE_YOUR_ELEVENLABS_VOICE_ID
+    model_id: eleven_multilingual_v2
+    context: true
+
+# Section names must match self.section("...") in periodic_table_scene.py
+narration:
+  - section: radius_period
+    text: "Across a period, atomic radius decreases: nuclear charge rises while the shell stays the same."
+
+  - section: radius_group
+    text: "Down a group, atomic radius increases, because every period adds a new shell."
+
+  - section: trends
+    text: "Across a period, ionization enthalpy and electronegativity increase, electron gain becomes more negative, and radius and metallic character fall. Down a group, it reverses."
+
+  - section: ie_exc
+    text: "But there are exceptions. In period 2, boron dips below beryllium, and oxygen below nitrogen, because a filled 2s and a half-filled 2p are extra stable."
+
+  - section: eg_exc
+    text: "Electron gain enthalpy is most negative for chlorine, not fluorine, because fluorine is so small that the incoming electron is repelled by its crowded 2p electrons."
+
+  - section: diagonal
+    text: "Diagonal relationship: lithium resembles magnesium, beryllium resembles aluminium, and boron resembles silicon."
+
+  - section: cta
+    text: "Follow IITians PACE for more videos like this."
+
+reel:
+  width: 1080
+  height: 1920
+  fps: 30
+  fit: blur
+  captions: true
+  caption_words: 3
+  end_hold: 0.8
+
+work_dir: reel_work
+output: out/periodic_table_2_trends.mp4

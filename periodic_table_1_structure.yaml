@@ -1,0 +1,65 @@
+# Modern periodic table, part 1: structure - ReelForge project
+# Build:  python reelforge.py voice periodic_table_1_structure.yaml
+#         python reelforge.py build periodic_table_1_structure.yaml
+
+video:
+  manim_file: periodic_table_scene.py
+  scene: PeriodicTableStructure
+  quality: h
+  vertical: true
+
+# Copy the whole `tts:` block from your working determinants.yaml here
+# (or just paste your voice ID below).
+tts:
+  provider: elevenlabs
+  elevenlabs:
+    voice_id: PASTE_YOUR_ELEVENLABS_VOICE_ID
+    model_id: eleven_multilingual_v2
+    context: true
+
+# Section names must match self.section("...") in periodic_table_scene.py
+narration:
+  - section: history
+    text: "Döbereiner grouped elements into triads. Newlands noticed repeating octaves. Mendeleev built a table by atomic mass, leaving gaps and predicting gallium and germanium."
+
+  - section: law
+    text: "Moseley then showed that atomic number is the true basis. So the modern periodic law says: the properties of elements are a periodic function of their atomic number."
+
+  - section: layout
+    text: "The modern table has 18 groups, the columns, and 7 periods, the rows, holding 118 elements."
+
+  - section: blocks
+    text: "By the subshell being filled, it splits into blocks. The s block: groups 1 and 2. The p block: groups 13 to 18. The d block: groups 3 to 12. And the f block below. Helium, 1s squared, still sits with the noble gases."
+
+  - section: periods
+    text: "Periods hold 2, 8, 8, 18, 18, 32 and 32 elements, set by the subshells that fill in each one."
+
+  - section: fam_s
+    text: "Group 1 is the alkali metals, hydrogen excluded. Group 2 is the alkaline earth metals."
+
+  - section: fam_d
+    text: "Groups 3 to 12 are the transition elements. The two rows below are the inner transition elements: lanthanoids and actinoids."
+
+  - section: fam_p
+    text: "Then group 13, the boron family. 14, the carbon family. 15, the nitrogen family, or pnictogens. 16, the oxygen family, or chalcogens. 17, the halogens. And 18, the noble gases."
+
+  - section: classes
+    text: "Metals fill the left and centre. Non-metals sit at the top right. A staircase of metalloids divides them: boron, silicon, germanium, arsenic, antimony and tellurium."
+
+  - section: states
+    text: "At room temperature, 11 elements are gases, and only mercury and bromine are liquids."
+
+  - section: cta
+    text: "Follow IITians PACE for more videos like this."
+
+reel:
+  width: 1080
+  height: 1920
+  fps: 30
+  fit: blur
+  captions: true
+  caption_words: 3
+  end_hold: 0.8
+
+work_dir: reel_work
+output: out/periodic_table_1_structure.mp4
