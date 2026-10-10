@@ -1,0 +1,69 @@
+# Quantum numbers - ReelForge project
+# Build:  python reelforge.py voice quantum_numbers.yaml
+#         python reelforge.py build quantum_numbers.yaml
+# (or GitHub Actions -> Build reel -> project file: quantum_numbers.yaml)
+
+video:
+  manim_file: quantum_numbers_scene.py
+  scene: QuantumNumbers
+  quality: h
+  vertical: true
+
+# Copy the whole `tts:` block from your working determinants.yaml here
+# (or just paste your voice ID below).
+tts:
+  provider: elevenlabs
+  elevenlabs:
+    voice_id: PASTE_YOUR_ELEVENLABS_VOICE_ID
+    model_id: eleven_multilingual_v2
+    context: true
+
+# Section names must match self.section("...") in quantum_numbers_scene.py
+narration:
+  - section: intro
+    text: "Four quantum numbers give every electron its own address: n, l, m l, and m s."
+
+  - section: "n"
+    text: "n is the principal quantum number. It takes values 1, 2, 3 and so on, and sets the shell, its energy and its size."
+
+  - section: l
+    text: "l is the azimuthal quantum number. It runs from 0 to n minus 1, and sets the subshell shape: s, p, d, f for l equal to 0, 1, 2, 3."
+
+  - section: ml
+    text: "m l is the magnetic quantum number. It runs from minus l to plus l, so a subshell has 2 l plus 1 orbitals, each with its own orientation."
+
+  - section: ms
+    text: "m s is the spin quantum number, plus one half or minus one half. So an orbital holds at most 2 electrons, with opposite spins."
+
+  - section: pauli
+    text: "Pauli's exclusion principle: no two electrons in an atom can have all 4 quantum numbers the same. These two 1s electrons differ only in spin."
+
+  - section: cap_sub
+    text: "Each orbital holds 2 electrons, so a subshell holds 2 times 2 l plus 1: that is 2, 6, 10 and 14."
+
+  - section: example
+    text: "Take n equal to 3. Then l is 0, 1 or 2, giving 3s, 3p and 3d, with 1, 3 and 5 orbitals. That is 9 orbitals, which is n squared, and 18 electrons, which is 2 n squared."
+
+  - section: check1
+    text: "Quick check. n 2, l 1, m l minus 1, m s plus one half. Allowed? Yes."
+
+  - section: check2
+    text: "n 2, l 2, m l 0, m s plus one half? Not allowed. l can be at most n minus 1."
+
+  - section: check3
+    text: "n 3, l 1, m l 2, m s minus one half? Not allowed. m l cannot be larger than l."
+
+  - section: cta
+    text: "Follow IITians PACE for more videos like this."
+
+reel:
+  width: 1080
+  height: 1920
+  fps: 30
+  fit: blur
+  captions: true
+  caption_words: 3
+  end_hold: 0.8
+
+work_dir: reel_work
+output: out/quantum_numbers.mp4
