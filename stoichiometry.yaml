@@ -1,0 +1,66 @@
+# Stoichiometry - ReelForge project
+# Build:  python reelforge.py voice stoichiometry.yaml
+#         python reelforge.py build stoichiometry.yaml
+# (or GitHub Actions -> Build reel -> project file: stoichiometry.yaml)
+
+video:
+  manim_file: stoichiometry_scene.py
+  scene: Stoichiometry
+  quality: h
+  vertical: true
+
+# Copy the whole `tts:` block from your working determinants.yaml here
+# (or just paste your voice ID below).
+tts:
+  provider: elevenlabs
+  elevenlabs:
+    voice_id: PASTE_YOUR_ELEVENLABS_VOICE_ID
+    model_id: eleven_multilingual_v2
+    context: true
+
+# Section names must match self.section("...") in stoichiometry_scene.py
+narration:
+  - section: recipe
+    text: "A balanced equation is a recipe. One nitrogen molecule and 3 hydrogen molecules make 2 ammonia molecules."
+
+  - section: ratio
+    text: "So the coefficients are mole ratios: 1 mole, 3 moles, 2 moles. Double it, or multiply by 10, and the ratio stays the same."
+
+  - section: roadmap
+    text: "Every problem follows one route. Mass to moles, divide by molar mass. Moles to moles, use the ratio. Then moles back to mass, multiply by molar mass."
+
+  - section: ex_setup
+    text: "Example. 28 grams of nitrogen reacts with excess hydrogen. Find the mass of ammonia formed."
+
+  - section: ex_step1
+    text: "Moles of nitrogen: 28 divided by 28, which is 1."
+
+  - section: ex_step2
+    text: "The ratio of nitrogen to ammonia is 1 to 2, so ammonia is 2 moles."
+
+  - section: ex_step3
+    text: "Mass is 2 times 17, which is 34 grams."
+
+  - section: lim_setup
+    text: "But what if both amounts are given? Say 2 moles of nitrogen and 3 moles of hydrogen. Who runs out first?"
+
+  - section: lim_divide
+    text: "Divide each mole value by its coefficient. Nitrogen gives 2. Hydrogen gives 1. The smaller one wins, so hydrogen is the limiting reagent."
+
+  - section: lim_react
+    text: "Hydrogen decides the yield. 3 moles of hydrogen use 1 mole of nitrogen and make 2 moles of ammonia. 1 mole of nitrogen is left over."
+
+  - section: cta
+    text: "Follow IITians PACE for more videos like this."
+
+reel:
+  width: 1080
+  height: 1920
+  fps: 30
+  fit: blur
+  captions: true
+  caption_words: 3
+  end_hold: 0.8
+
+work_dir: reel_work
+output: out/stoichiometry.mp4
